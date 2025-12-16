@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:camera/camera.dart';
 import 'pages/home_page.dart';
 
-void main() {
+late List<CameraDescription> cameras;
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  cameras = await availableCameras(); // ⭐ 필수
   runApp(const MyApp());
 }
 
@@ -10,12 +15,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'spr app Demo',
-      home: const HomePage(),
+      home: HomePage(),
     );
-
-
-
   }
 }
