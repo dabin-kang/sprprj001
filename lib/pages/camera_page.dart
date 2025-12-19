@@ -66,7 +66,7 @@ class _CameraPageState extends State<CameraPage> {
     try {
       // 1️⃣ 모델 파일 로드
       debugPrint('   1️⃣ 모델 파일 로드 시도...');
-      _interpreter = await Interpreter.fromAsset('model.tflite');
+      _interpreter = await Interpreter.fromAsset('assets/model.tflite');
       debugPrint('   ✅ 모델 파일 로드 성공');
 
       // 🔎 [TEST 1] 입력 / 출력 텐서 구조 확인
