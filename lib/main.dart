@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'pages/home_page.dart';
 import 'firebase_options.dart';
-import 'pages/home_page.dart';
 
 late List<CameraDescription> cameras;
 
