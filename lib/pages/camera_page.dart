@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
 import 'package:url_launcher/url_launcher.dart';
+import 'musicplay_page.dart';
+
 
 /// ===============================
 /// 추론 결과 모델
@@ -246,7 +248,14 @@ class _CameraPageState extends State<CameraPage> {
                       return;
                     }
 
-                    await _openUrl(result.label);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MusicPlay(
+                          url: stickerUrlMap[result.label]!,
+                        ),
+                      ),
+                    );
                   },
                 ),
               ],

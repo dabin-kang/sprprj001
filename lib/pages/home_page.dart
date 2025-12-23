@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sprprj001/pages/musicplay_page.dart';
 import 'camera_page.dart';
 import 'gallery_page.dart';
 
@@ -58,11 +59,16 @@ class HomePage extends StatelessWidget {
               color: Colors.deepPurple,
               tooltip: '음악 재생',
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('음악 재생 페이지 이동 (미구현)')),
+                Navigator.push(context,
+                MaterialPageRoute(
+                builder:(_) => const MusicPlay(
+                  url: 'https://youtu.be/GPrspUrmZj8',
+                )
+                ),
                 );
               },
             ),
+
 
             // 4. 설정
             IconButton(
