@@ -6,6 +6,10 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
 import 'package:url_launcher/url_launcher.dart';
 import 'musicplay_page.dart';
+import '../models/sticker_model.dart';
+import '../repositories/sticker_repository.dart';
+
+
 
 
 /// ===============================
@@ -43,12 +47,16 @@ class _CameraPageState extends State<CameraPage> {
     'background' : 'https://youtu.be/4oMdAM5x3nM?si=6UzOHCkNL3CdWBHA',
   };
 
+
+
   @override
   void initState() {
     super.initState();
     _initCamera();
     _loadModel();
   }
+
+
 
   /// ===============================
   /// 카메라 초기화
@@ -247,6 +255,21 @@ class _CameraPageState extends State<CameraPage> {
                       _show('등록되지 않은 스티커', Colors.red);
                       return;
                     }
+                    final sticker = StickerModel(
+                      id: result.label,
+                      label: result.label,
+                      imagePath: _capturedImage!.path,
+                      musicUrl: stickerUrlMap[result.label]!,
+                      collectedAt: DateTime.now(),
+                    );
+
+
+
+// 🔥 수집
+                    await StickerRepository.add(sticker);
+
+// ▶ 음악 재생 페이지 이동
+
 
                     Navigator.push(
                       context,
@@ -265,6 +288,9 @@ class _CameraPageState extends State<CameraPage> {
       ],
     );
   }
+
+
+
 
   @override
   void dispose() {

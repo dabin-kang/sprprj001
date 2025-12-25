@@ -18,4 +18,5 @@ class DefaultFirebaseOptions {
     projectId: 'sprprjdb',
     storageBucket: 'sprprjdb.firebasestorage.app',
   );
+
 }
