@@ -1,35 +1,38 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class StickerModel {
   final String id;
   final String label;
-  final String imagePath;
+  final String imageUrl;
   final String musicUrl;
-  final DateTime collectedAt;
+  final Timestamp? collectedAt;
 
   StickerModel({
     required this.id,
     required this.label,
-    required this.imagePath,
+    required this.imageUrl,
     required this.musicUrl,
-    required this.collectedAt,
+    this.collectedAt,
   });
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'label': label,
-      'imageUrl': imagePath,
-      'musicUrl': musicUrl,
-      'collectedAt': collectedAt.toIso8601String(),
-    };
+  /// Firestore → Model
+  factory StickerModel.fromJson(String id, Map<String, dynamic> json) {
+    return StickerModel(
+      id: id,
+      label: json['label'],
+      imageUrl: json['imageUrl'],
+      musicUrl: json['musicUrl'],
+      collectedAt: json['collectedAt'],
+    );
   }
 
-  factory StickerModel.fromJson(Map<String, dynamic> json) {
-    return StickerModel(
-      id: json['id'],
-      label: json['label'],
-      imagePath: json['imageUrl'],
-      musicUrl: json['musicUrl'],
-      collectedAt: DateTime.parse(json['collectedAt']),
-    );
+  /// Model → Firestore
+  Map<String, dynamic> toJson() {
+    return {
+      'label': label,
+      'imageUrl': imageUrl,
+      'musicUrl': musicUrl,
+      'collectedAt': collectedAt,
+    };
   }
 }

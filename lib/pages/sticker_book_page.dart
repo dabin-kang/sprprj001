@@ -1,7 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import '../repositories/sticker_repository.dart';
 import '../models/sticker_model.dart';
+import 'package:intl/intl.dart';
 
 class StickerBookPage extends StatelessWidget {
   const StickerBookPage({super.key});
@@ -40,16 +40,27 @@ class StickerBookPage extends StatelessWidget {
             itemCount: stickers.length,
             itemBuilder: (context, index) {
               final sticker = stickers[index];
+
+              final collectedText = sticker.collectedAt != null
+                  ? DateFormat('yyyy.MM.dd')
+                  .format(sticker.collectedAt!.toDate())
+                  : '';
+
               return ListTile(
-                leading: Image.file(
-                  File(sticker.imagePath),
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    sticker.imageUrl,
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.broken_image),
+                  ),
                 ),
                 title: Text(sticker.label),
                 subtitle: Text(
-                  sticker.collectedAt.toString(),
+                  collectedText,
                   style: const TextStyle(fontSize: 12),
                 ),
               );
