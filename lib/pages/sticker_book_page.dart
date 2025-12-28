@@ -16,26 +16,30 @@ class StickerBookPage extends StatelessWidget {
       body: FutureBuilder<List<StickerModel>>(
         future: StickerRepository.getAll(),
         builder: (context, snapshot) {
-          // 🔄 로딩 중
+          // 🔄 로딩
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // ❌ 에러
+          // ❌ 에러 (로그인 포함)
           if (snapshot.hasError) {
-            return const Center(child: Text('스티커를 불러오지 못했습니다'));
+            final message = snapshot.error.toString().contains('로그인')
+                ? '로그인이 필요합니다'
+                : '스티커를 불러오지 못했습니다';
+
+            return Center(child: Text(message));
           }
 
           final stickers = snapshot.data ?? [];
 
-          // 📭 스티커 없음
+          // 📭 비어 있음
           if (stickers.isEmpty) {
             return const Center(
               child: Text('아직 수집한 스티커가 없습니다'),
             );
           }
 
-          // 📘 스티커 리스트
+          // 📘 리스트
           return ListView.builder(
             itemCount: stickers.length,
             itemBuilder: (context, index) {

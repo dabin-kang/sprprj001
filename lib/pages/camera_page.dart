@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/services.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
+
 import 'musicplay_page.dart';
 import '../repositories/sticker_repository.dart';
 
@@ -32,8 +34,8 @@ class _CameraPageState extends State<CameraPage> {
 
   bool _cameraReady = false;
   bool _modelLoaded = false;
-  XFile? _capturedImage;
 
+  XFile? _capturedImage;
   List<String> _labels = [];
 
   /// 🔗 인식 가능한 스티커만 등록
@@ -49,6 +51,9 @@ class _CameraPageState extends State<CameraPage> {
     _loadModel();
   }
 
+  /// ===============================
+  /// 카메라 초기화
+  /// ===============================
   Future<void> _initCamera() async {
     final cameras = await availableCameras();
     _controller = CameraController(
@@ -60,11 +65,11 @@ class _CameraPageState extends State<CameraPage> {
     setState(() => _cameraReady = true);
   }
 
+  /// ===============================
+  /// 모델 로드
+  /// ===============================
   Future<void> _loadModel() async {
     _interpreter = await Interpreter.fromAsset('assets/model.tflite');
-
-    // 🔍 디버그용: 입력 타입 확인
-    debugPrint('INPUT TENSOR → ${_interpreter!.getInputTensor(0)}');
 
     final labelData = await rootBundle.loadString('assets/labels.txt');
     _labels = labelData.split('\n').where((e) => e.isNotEmpty).toList();
@@ -72,6 +77,9 @@ class _CameraPageState extends State<CameraPage> {
     setState(() => _modelLoaded = true);
   }
 
+  /// ===============================
+  /// 사진 촬영
+  /// ===============================
   Future<void> _takePicture() async {
     final image = await _controller!.takePicture();
     setState(() => _capturedImage = image);
@@ -82,16 +90,15 @@ class _CameraPageState extends State<CameraPage> {
   }
 
   /// ===============================
-  /// 🔥 추론 (FLOAT32 대응 최종본)
+  /// 🔥 추론 (FLOAT32 입력)
   /// ===============================
   Future<InferenceResult> _runInference(File file) async {
     final bytes = await file.readAsBytes();
     final image = img.decodeImage(bytes)!;
     final resized = img.copyResize(image, width: 224, height: 224);
 
-    /// ✅ float32 입력 버퍼
-    final Float32List input =
-    Float32List(1 * 224 * 224 * 3);
+    /// ✅ UINT8 입력 버퍼 (정답)
+    final Uint8List input = Uint8List(1 * 224 * 224 * 3);
 
     int index = 0;
 
@@ -99,20 +106,15 @@ class _CameraPageState extends State<CameraPage> {
       for (int x = 0; x < 224; x++) {
         final pixel = resized.getPixel(x, y);
 
-        final r = (pixel >> 16) & 0xFF;
-        final g = (pixel >> 8) & 0xFF;
-        final b = pixel & 0xFF;
-
-        input[index++] = r / 255.0;
-        input[index++] = g / 255.0;
-        input[index++] = b / 255.0;
-
+        input[index++] = (pixel >> 16) & 0xFF; // R
+        input[index++] = (pixel >> 8) & 0xFF;  // G
+        input[index++] = pixel & 0xFF;         // B
       }
     }
 
     final output = List.generate(
       1,
-          (_) => List.filled(_labels.length, 0.0),
+          (_) => List.filled(_labels.length, 0),
     );
 
     _interpreter!.run(
@@ -122,17 +124,22 @@ class _CameraPageState extends State<CameraPage> {
 
     final scores = output[0];
 
-    final sorted = List<double>.from(scores)
+    /// UINT8 → 확률화 (0~255 → 0.0~1.0)
+    final normalized =
+    scores.map((e) => e / 255.0).toList();
+
+    final sorted = List<double>.from(normalized)
       ..sort((b, a) => a.compareTo(b));
 
     final top1 = sorted[0];
     final top2 = sorted.length > 1 ? sorted[1] : 0.0;
 
-    final indexLabel = scores.indexOf(top1);
+    final indexLabel = normalized.indexOf(top1);
     final label = _labels[indexLabel].split(' ').last;
 
     return InferenceResult(label, top1, top2);
   }
+
 
   void _show(String msg, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -182,20 +189,8 @@ class _CameraPageState extends State<CameraPage> {
                   final result =
                   await _runInference(File(_capturedImage!.path));
 
-                  if (result.label == 'background') {
-                    _show('인식 대상이 아닙니다', Colors.orange);
-                    return;
-                  }
-
                   if (result.confidence < 0.7) {
                     _show('신뢰도 부족', Colors.red);
-                    return;
-                  }
-
-                  if ((result.confidence -
-                      result.secondConfidence) <
-                      0.25) {
-                    _show('명확하지 않은 인식', Colors.orange);
                     return;
                   }
 
@@ -204,36 +199,23 @@ class _CameraPageState extends State<CameraPage> {
                     return;
                   }
 
-                  try {
-                    await StickerRepository.add(
-                      id: result.label,
-                      label: result.label,
-                      imageFile:
-                      File(_capturedImage!.path),
-                      musicUrl:
-                      stickerUrlMap[result.label]!,
-                    );
+                  await StickerRepository.add(
+                    id: result.label,
+                    label: result.label,
+                    imageFile: File(_capturedImage!.path),
+                    musicUrl: stickerUrlMap[result.label]!,
+                  );
 
-                    await _controller?.dispose();
-                    _controller = null;
+                  if (!mounted) return;
 
-                    if (!mounted) return;
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => MusicPlay(
-                          url: stickerUrlMap[result.label]!,
-                        ),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => MusicPlay(
+                        url: stickerUrlMap[result.label]!,
                       ),
-                    );
-                  } catch (e) {
-                    _show(
-                      e.toString()
-                          .replaceAll('Exception:', ''),
-                      Colors.orange,
-                    );
-                  }
+                    ),
+                  );
                 },
                 child: const Text('확인'),
               ),
